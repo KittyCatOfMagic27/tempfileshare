@@ -1,0 +1,20 @@
+;;include static <stdlib>
+proc foo
+begin
+end
+proc bar
+begin
+  foo()
+end
+proc baz
+begin
+  bar()
+end
+
+proc main
+begin
+  uint x 5
+  ptr y &x
+  # baz()
+  printhex64(y)
+end
