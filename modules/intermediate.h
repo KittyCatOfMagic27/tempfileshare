@@ -1,7 +1,6 @@
 #ifndef INTER_H
 #define INTER_H
 
-#include <map>
 #include <vector>
 #include <string>
 #include <cstdio>
