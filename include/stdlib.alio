@@ -1,0 +1,169 @@
+# FLAGS
+;;define O_RDONLY 0
+;;define O_WRONLY 1
+;;define O_RDWR 2
+# MODES
+;;define S_IRWXU 1792
+# OUTSTREAMS
+;;define STDERR 2
+;;define STDOUT 1
+;;define STDIN 0
+
+#SYSCALL WRAPPERS
+proc SYS_write
+in uint fd
+in ptr buffer
+in uint size
+begin
+  syscall(1 fd buffer size)
+end
+
+proc SYS_openfd
+in ptr filename
+in uint flags
+in uint mode
+out uint fd
+begin
+  fd syscall(2 filename flags mode)
+end
+
+proc SYS_closefd
+in uint fd
+begin
+  syscall(3 fd)
+end
+
+proc SYS_fstat
+in uint fd
+in ptr fstat_struct # buffer[144]
+begin
+  syscall(5 fd fstat_struct)
+end
+
+proc sizeof_file
+in uint fd
+out uint size
+begin
+  string fstat_struct[144]
+  ptr y &fstat_struct
+  syscall(5 fd fstat_struct)
+  y y+48
+  size @y
+end
+
+#UTIL
+proc strlen
+in ptr str
+out uint len
+begin
+  ptr beginning str
+  char c @str
+  while(c)
+    str++
+    c @str
+  end
+  len str-beginning
+end
+
+proc strcmp
+in ptr str1
+in ptr str2
+out bool equals?
+begin
+  uint len1 strlen(str1)
+  uint len2 strlen(str2)
+  equals? len1 = len2
+  if(equals?)
+    bool continue true
+    bool i 0
+    while(continue)
+      char c1 @str1
+      char c2 @str2
+      equals? c1 = c2
+      bool nend i < len1
+      continue equals? && nend
+      i++
+      str1++
+      str2++
+    end
+  end
+end
+
+proc tohex8 #Make this for tohex64 so you can print pointers
+in char c
+in ptr buffer
+begin
+  char save c
+  c >> 4
+  bool letter? c >= 10
+  if(letter?)
+    c c+7
+  end
+  c c+48
+  @buffer c
+  buffer++
+  c save
+  c c -& 15
+  letter? c >= 10
+  if(letter?)
+    c c+7
+  end
+  c c+48
+  @buffer c
+end
+
+proc tohex32
+in uint c
+in ptr buffer
+begin
+  tohex8(c buffer)
+  c >> 8
+  buffer buffer + 2
+  tohex8(c buffer)
+  c >> 8
+  buffer buffer + 2
+  tohex8(c buffer)
+  c >> 8
+  buffer buffer + 2
+  tohex8(c buffer)
+end
+
+proc tohex64
+in long c
+in ptr buffer
+begin
+  tohex8(c buffer)
+  c >> 8
+  buffer buffer + 2
+  tohex8(c buffer)
+  c >> 8
+  buffer buffer + 2
+  tohex8(c buffer)
+  c >> 8
+  buffer buffer + 2
+  tohex8(c buffer)
+  c >> 8
+  buffer buffer + 2
+  tohex8(c buffer)
+  c >> 8
+  buffer buffer + 2
+  tohex8(c buffer)
+  c >> 8
+  buffer buffer + 2
+  tohex8(c buffer)
+  c >> 8
+  buffer buffer + 2
+  tohex8(c buffer)
+end
+
+proc printhex64
+in long hex
+begin
+  char newline 10
+  string buffer[16]
+  string prefix "0x"
+  ptr y &buffer
+  tohex64(hex y)
+  y &prefix
+  SYS_write(STDOUT y 19)
+end
